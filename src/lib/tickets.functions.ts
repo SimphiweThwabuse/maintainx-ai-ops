@@ -517,6 +517,17 @@ export const updateTicket = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    // Acknowledgement: once the technician starts (or otherwise moves the
+    // ticket off "assigned"), its "new job" alerts stop counting in the badge.
+    if (data.status && data.status !== "assigned" && previousStatus === "assigned") {
+      await context.supabase
+        .from("app_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("ticket_id", data.id)
+        .eq("kind", "new_job")
+        .is("read_at", null);
+    }
+
     const { data: profile } = await context.supabase
       .from("profiles")
       .select("full_name")
