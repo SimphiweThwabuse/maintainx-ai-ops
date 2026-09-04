@@ -82,7 +82,7 @@ export function useNotifications() {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "app_notifications",
           filter: `user_id=eq.${userId}`,
