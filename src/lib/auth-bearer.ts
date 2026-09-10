@@ -13,6 +13,23 @@ import { supabase } from "@/integrations/supabase/client";
  * refresh, and only then gives up by sending the user back to sign-in instead
  * of firing a request that is guaranteed to fail.
  */
+/**
+ * Guests on public pages (e.g. /report) have never signed in, so there is no
+ * stored Supabase session at all. Those calls must pass through without an
+ * Authorization header — public server functions allow anonymous access, and
+ * protected ones still enforce auth server-side.
+ */
+function hasStoredSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return Object.keys(window.localStorage).some(
+      (key) => key.startsWith("sb-") && key.endsWith("-auth-token"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function resolveAccessToken(): Promise<string | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const { data } = await supabase.auth.getSession();
@@ -32,6 +49,12 @@ async function resolveAccessToken(): Promise<string | null> {
 export const attachAuthBearer = createMiddleware({ type: "function" }).client(
   async ({ next }) => {
     const token = await resolveAccessToken();
+
+    if (!token && !hasStoredSession()) {
+      // Guest / anonymous visitor on a public page — let the call through
+      // without a token; the server decides whether auth is required.
+      return next();
+    }
 
     if (!token) {
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
