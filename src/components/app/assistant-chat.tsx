@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Send, X } from "lucide-react";
-import chatbotIcon from "@/assets/chat-bot-icon.avif.asset.json";
+import { MessageCircle, Send, X } from "lucide-react";
 import { askGuestAssistant, askStaffAssistant } from "@/lib/assistant.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -106,7 +105,7 @@ export function AssistantChat({ audience }: { audience: string }) {
           className="fixed right-4 bottom-4 z-50 h-12 gap-2 rounded-full px-4 shadow-lg sm:right-6 sm:bottom-6"
           aria-label="Open the MaintainX assistant"
         >
-          <img src={chatbotIcon.url} alt="" className="size-5 object-contain" aria-hidden />
+          <MessageCircle className="size-5" aria-hidden />
           <span className="hidden sm:inline">Ask MaintainX</span>
         </Button>
       )}
