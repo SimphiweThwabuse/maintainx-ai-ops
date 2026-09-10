@@ -50,6 +50,12 @@ export const attachAuthBearer = createMiddleware({ type: "function" }).client(
   async ({ next }) => {
     const token = await resolveAccessToken();
 
+    if (!token && !hasStoredSession()) {
+      // Guest / anonymous visitor on a public page — let the call through
+      // without a token; the server decides whether auth is required.
+      return next();
+    }
+
     if (!token) {
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
         window.location.replace("/auth");
