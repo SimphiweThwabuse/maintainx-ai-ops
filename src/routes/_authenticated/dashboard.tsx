@@ -7,9 +7,10 @@ import { PriorityBadge, StatusBadge } from "@/components/app/badges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listTickets, runSlaEscalationCheck } from "@/lib/tickets.functions";
-import { getTechnicianFeed } from "@/lib/technicians.functions";
+import { getTechnicianFeed, listTechnicians } from "@/lib/technicians.functions";
 import { formatDate, STATUS_META, STATUS_ORDER, type TicketStatus } from "@/lib/domain";
 import { useAccount } from "@/hooks/useAccount";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const fetchTickets = useServerFn(listTickets);
+  const fetchTechnicians = useServerFn(listTechnicians);
   const { isTechnician, isManager, isReceptionist } = useAccount();
   const technicianOnly = isTechnician && !isManager && !isReceptionist;
   const runSlaCheck = useServerFn(runSlaEscalationCheck);
@@ -34,6 +36,11 @@ function Dashboard() {
       await runSlaCheck().catch(() => undefined);
       return fetchTickets();
     },
+  });
+  const { data: technicians, isLoading: isLoadingTechnicians } = useQuery({
+    queryKey: ["technicians", "dashboard"],
+    queryFn: () => fetchTechnicians(),
+    enabled: isReceptionist,
   });
 
   if (technicianOnly) return <TechnicianDashboard />;
@@ -170,6 +177,63 @@ function Dashboard() {
           </ul>
         </section>
       </div>
+
+      {isReceptionist && (
+        <section className="surface-panel mt-6">
+          <header className="flex items-center justify-between border-b border-border px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold">Technicians</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Available technicians for manual reassignment
+              </p>
+            </div>
+            <Link to="/technicians" className="text-xs font-medium text-primary hover:underline">
+              View all
+            </Link>
+          </header>
+          <div className="divide-y divide-border">
+            {isLoadingTechnicians && (
+              <div className="p-5">
+                <Skeleton className="h-20 w-full" />
+              </div>
+            )}
+            {!isLoadingTechnicians && (technicians ?? []).length === 0 && (
+              <p className="p-5 text-sm text-muted-foreground">No technicians registered.</p>
+            )}
+            {(technicians ?? []).map((tech) => (
+              <div
+                key={tech.id}
+                className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{tech.fullName}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {tech.services.join(", ") || "No services"} · {tech.organisation}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {tech.type === "in_house" ? "In-house" : "External"}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                      tech.isAvailable
+                        ? "bg-status-resolved text-status-resolved-foreground"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {tech.isAvailable ? "Available" : "Unavailable"}
+                  </span>
+                  <span className="inline-flex items-center rounded-md bg-brand/10 px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-brand">
+                    {tech.openTickets} open
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </AppShell>
   );
 }
