@@ -7,9 +7,10 @@ import { PriorityBadge, StatusBadge } from "@/components/app/badges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listTickets, runSlaEscalationCheck } from "@/lib/tickets.functions";
-import { getTechnicianFeed } from "@/lib/technicians.functions";
+import { getTechnicianFeed, listTechnicians } from "@/lib/technicians.functions";
 import { formatDate, STATUS_META, STATUS_ORDER, type TicketStatus } from "@/lib/domain";
 import { useAccount } from "@/hooks/useAccount";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
