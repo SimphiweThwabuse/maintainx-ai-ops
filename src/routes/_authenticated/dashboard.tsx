@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const fetchTickets = useServerFn(listTickets);
+  const fetchTechnicians = useServerFn(listTechnicians);
   const { isTechnician, isManager, isReceptionist } = useAccount();
   const technicianOnly = isTechnician && !isManager && !isReceptionist;
   const runSlaCheck = useServerFn(runSlaEscalationCheck);
@@ -35,6 +36,11 @@ function Dashboard() {
       await runSlaCheck().catch(() => undefined);
       return fetchTickets();
     },
+  });
+  const { data: technicians, isLoading: isLoadingTechnicians } = useQuery({
+    queryKey: ["technicians", "dashboard"],
+    queryFn: () => fetchTechnicians(),
+    enabled: isReceptionist,
   });
 
   if (technicianOnly) return <TechnicianDashboard />;
